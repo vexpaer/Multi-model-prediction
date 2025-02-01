@@ -5,11 +5,9 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from sklearn.preprocessing import MinMaxScaler
 
-# 创建结果文件夹
-if not os.path.exists('年龄结果'):
-    os.makedirs('年龄结果')
+if not os.path.exists('2011-2021'):
+    os.makedirs('2011-2021')
 
-# 文件列表
 files = [
     '10-14_years.csv', '15-19_years.csv', '20-24_years.csv',
     '25-29_years.csv', '30-34_years.csv', '35-39_years.csv',
@@ -28,52 +26,33 @@ def create_dataset(data, time_step=1):
     return np.array(X), np.array(Y)
 
 for file in files:
-    # 读取数据
-    df = pd.read_csv(f'原数据/{file}')
+    df = pd.read_csv(f'rawData/{file}')
     data = df['value'].values.reshape(-1, 1)
-    
-    # 数据归一化
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_data = scaler.fit_transform(data)
-    
-    # 划分训练集和测试集
-    train_size = 31  # 1980-2010年
+    train_size = 31  
     train_data = scaled_data[:train_size]
     test_data = scaled_data[train_size:]
-    
-    # 创建训练数据
     time_step = 10
     X_train, y_train = create_dataset(train_data, time_step)
     X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
-    
-    # 创建LSTM模型
     model = Sequential()
     model.add(LSTM(50, return_sequences=True, input_shape=(time_step, 1)))
     model.add(LSTM(50, return_sequences=False))
     model.add(Dense(25))
     model.add(Dense(1))
-    
-    # 编译模型
     model.compile(optimizer='adam', loss='mean_squared_error')
-    
-    # 训练模型
     model.fit(X_train, y_train, epochs=100, batch_size=1, verbose=0)
-    
-    # 预测
     test_input = train_data[-time_step:]
     predictions = []
-    for i in range(11):  # 预测2011-2021年
+    for i in range(11): 
         test_input = test_input.reshape((1, time_step, 1))
         pred = model.predict(test_input, verbose=0)
         predictions.append(pred[0][0])
         test_input = np.append(test_input[0][1:], pred)
-    
-    # 反归一化
     predictions = scaler.inverse_transform(np.array(predictions).reshape(-1, 1))
-    
-    # 保存结果
     result_df = pd.DataFrame({
         'year': range(2011, 2022),
         'value': predictions.flatten()
     })
-    result_df.to_csv(f'年龄结果/result_{file}', index=False)
+    result_df.to_csv(f'2011-2021/result_{file}', index=False)

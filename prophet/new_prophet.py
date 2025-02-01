@@ -2,11 +2,9 @@ import pandas as pd
 from prophet import Prophet
 import os
 
-# 创建结果文件夹
-if not os.path.exists('年龄结果'):
-    os.makedirs('年龄结果')
+if not os.path.exists('2011-2021'):
+    os.makedirs('2011-2021')
 
-# 定义文件列表
 files = [
     '10-14_years.csv', '15-19_years.csv', '20-24_years.csv',
     '25-29_years.csv', '30-34_years.csv', '35-39_years.csv',
@@ -18,23 +16,12 @@ files = [
 ]
 
 for file in files:
-    # 读取数据
-    df = pd.read_csv(f'原数据/{file}')
-    
-    # 准备Prophet所需格式
+    df = pd.read_csv(f'rawData/{file}')
     df = df.rename(columns={'year': 'ds', 'value': 'y'})
-    
-    # 划分训练集和预测集
     train = df[df['ds'] <= 2010]
     future = pd.DataFrame({'ds': range(2011, 2022)})
-    
-    # 训练模型
     model = Prophet()
     model.fit(train)
-    
-    # 预测
     forecast = model.predict(future)
-    
-    # 保存结果
     result = forecast[['ds', 'yhat']].rename(columns={'ds': 'year', 'yhat': 'value'})
-    result.to_csv(f'年龄结果/result_{file}', index=False, float_format='%.8f')
+    result.to_csv(f'2011-2021/result_{file}', index=False, float_format='%.8f')

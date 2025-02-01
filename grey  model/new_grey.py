@@ -1,42 +1,33 @@
 import os
 import numpy as np
 import pandas as pd
-
 class GreyModel:
     def __init__(self):
         self.a = None
         self.b = None
-        self.x0 = None  # 原始数据
-        self.x1 = None  # 累加序列
-        
+        self.x0 = None  
+        self.x1 = None  
     def fit(self, data):
         self.x0 = data
-        # 累加生成序列
         self.x1 = np.cumsum(data)
-        # 构造矩阵B和Y
         B = np.array([-0.5*(self.x1[i-1] + self.x1[i]) for i in range(1, len(self.x1))])
         B = np.column_stack((B, np.ones(len(B))))
         Y = self.x0[1:]
-        # 计算参数
         params = np.linalg.inv(B.T @ B) @ B.T @ Y
         self.a, self.b = params
         
     def predict(self, n):
-        # 预测累加序列
         x1_pred = [self.x1[0]]
         for k in range(1, len(self.x0) + n):
             x1_k = (self.x0[0] - self.b/self.a) * np.exp(-self.a*(k)) + self.b/self.a
             x1_pred.append(x1_k)
-        
-        # 累减还原原始序列预测值
         x0_pred = np.diff(x1_pred)
-        return x0_pred[-n:]  # 返回未来n个预测值
+        return x0_pred[-n:]  
 
 def process_files():
-    input_folder = "原数据"
-    output_folder = "年龄结果"
+    input_folder = "rawData"
+    output_folder = "2011-2021"
     os.makedirs(output_folder, exist_ok=True)
-    
     file_names = [
         "10-14_years.csv", "15-19_years.csv", "20-24_years.csv",
         "25-29_years.csv", "30-34_years.csv", "35-39_years.csv",
@@ -49,20 +40,13 @@ def process_files():
     
     for file_name in file_names:
         df = pd.read_csv(os.path.join(input_folder, file_name))
-        values = df['value'].values  # 列名应为'val'而非'value'
+        values = df['value'].values 
         
-        # 划分训练集和测试集
-        train_data = values[:31]  # 1980-2010
-        test_data = values[31:]   # 2011-2021
-        
-        # 训练模型
+        train_data = values[:31]  
+        test_data = values[31:]  
         model = GreyModel()
         model.fit(train_data)
-        
-        # 预测
         predictions = model.predict(len(test_data))
-        
-        # 保存结果
         result_df = pd.DataFrame({
             'year': df['year'][31:],
             'true_value': test_data,

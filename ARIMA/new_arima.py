@@ -2,10 +2,8 @@ import os
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 
-# 创建结果文件夹
-os.makedirs('年龄结果', exist_ok=True)
+os.makedirs('2011-2021', exist_ok=True)
 
-# 文件列表
 files = [
     '10-14_years.csv', '15-19_years.csv', '20-24_years.csv', '25-29_years.csv',
     '30-34_years.csv', '35-39_years.csv', '40-44_years.csv', '45-49_years.csv',
@@ -15,25 +13,14 @@ files = [
 ]
 
 for file in files:
-    # 读取数据
-    data = pd.read_csv(f'原数据/{file}')
-    
-    # 训练数据 (1980-2010)
+    data = pd.read_csv(f'rawData/{file}')
     train = data.iloc[:31]['value']
-    
-    # 创建并训练ARIMA模型
     model = ARIMA(train, order=(1,1,1))
     model_fit = model.fit()
-    
-    # 预测2011-2021年数据
     forecast = model_fit.forecast(steps=11)
-    
-    # 创建结果DataFrame，只包含预测年份和对应实际值
     result = pd.DataFrame({
-        'year': data['year'].iloc[31:],  # 只取2011-2021年
-        'actual': data['value'].iloc[31:],  # 只取2011-2021年实际值
-        'predicted': forecast  # 预测值
+        'year': data['year'].iloc[31:], 
+        'actual': data['value'].iloc[31:], 
+        'predicted': forecast 
     })
-    
-    # 保存结果
-    result.to_csv(f'年龄结果/result_{file}', index=False)
+    result.to_csv(f'2011-2021/result_{file}', index=False)

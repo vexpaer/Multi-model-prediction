@@ -5,10 +5,7 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 
-# 创建结果文件夹
-os.makedirs('年龄结果', exist_ok=True)
-
-# 定义文件列表
+os.makedirs('2011-2021', exist_ok=True)
 files = [
     '10-14_years.csv', '15-19_years.csv', '20-24_years.csv', '25-29_years.csv',
     '30-34_years.csv', '35-39_years.csv', '40-44_years.csv', '45-49_years.csv',
@@ -35,42 +32,27 @@ def build_model():
     return model
 
 for file in files:
-    # 读取数据
-    df = pd.read_csv(f'原数据/{file}')
+    df = pd.read_csv(f'rawData/{file}')
     data = df['value'].values.reshape(-1, 1)
-    
-    # 数据归一化
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled_data = scaler.fit_transform(data)
-    
-    # 划分训练集和测试集
-    train_data = scaled_data[:31]  # 1980-2010
-    test_data = scaled_data[31:]   # 2011-2021
-    
-    # 创建训练数据
+    train_data = scaled_data[:31]  
+    test_data = scaled_data[31:]   
     X_train, y_train = create_dataset(train_data)
     X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-    
-    # 创建模型并训练
     model = build_model()
     model.fit(X_train, y_train, epochs=100, batch_size=1, verbose=2)
-    
-    # 递归预测
     predictions = []
     last_sequence = train_data[-15:]
-    for i in range(11):  # 预测11年（2011-2021）
+    for i in range(11):  
         last_sequence = np.reshape(last_sequence, (1, 15, 1))
         pred = model.predict(last_sequence, verbose=0)
         predictions.append(pred[0][0])
         last_sequence = np.append(last_sequence[0][1:], pred)
-    
-    # 反归一化
     predictions = scaler.inverse_transform(np.array(predictions).reshape(-1, 1))
-    
-    # 保存结果
     result_df = pd.DataFrame({
         'year': df['year'][31:].values,
         'actual': df['value'][31:].values,
         'predicted': predictions.flatten()
     })
-    result_df.to_csv(f'年龄结果/result_{file}', index=False)
+    result_df.to_csv(f'2011-2021/result_{file}', index=False)
