@@ -14,7 +14,7 @@ for file in files:
     model = Prophet()
     model.fit(train)
     forecast = model.predict(future)
-    result = forecast[['ds', 'yhat']].rename(columns={'ds': 'year', 'yhat': 'value'})
+    result = forecast[['ds', 'yhat']].rename(columns={'ds': 'year', 'yhat': 'value'})[['year', 'value']]
     result.to_csv(f'2022-2050/result_{file}', index=False, float_format='%.8f')
 
 print("done process, result in'2022-2050' folder")

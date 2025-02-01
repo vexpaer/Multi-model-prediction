@@ -23,5 +23,10 @@ for file in files:
     model = Prophet()
     model.fit(train)
     forecast = model.predict(future)
+    
     result = forecast[['ds', 'yhat']].rename(columns={'ds': 'year', 'yhat': 'value'})
+    # 将日期转换为年份
+    result['year'] = pd.to_datetime(result['year']).dt.year
+    # 按年份分组取平均值（如果有多个相同年份的数据）
+    result = result.groupby('year', as_index=False).mean()
     result.to_csv(f'2011-2021/result_{file}', index=False, float_format='%.8f')
